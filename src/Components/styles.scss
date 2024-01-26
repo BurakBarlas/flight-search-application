@@ -1,0 +1,39 @@
+.search-container-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .search-tab-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100rem;
+    justify-content: center;
+    margin-bottom: 5rem;
+    gap: 1rem;
+
+    .search-input {
+      width: 15rem;
+    }
+  }
+
+  .results-container {
+    .flight-info {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      border: solid 1px lightgray;
+      width: 50rem;
+      height: 7rem;
+      border-radius: 10px;
+      margin: 1rem;
+      .flight-container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        width: 8rem;
+      }
+    }
+  }
+}
