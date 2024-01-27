@@ -7,7 +7,7 @@ import {
   Space,
   message,
 } from "antd";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { DownOutlined, UpOutlined } from "@ant-design/icons";
 
 import "react-datepicker/dist/react-datepicker.css";
@@ -120,8 +120,6 @@ const Search = () => {
 
   let data3;
   const onClick = ({ key }) => {
-    // message.info(`Click on item ${key}`);
-
     if (key === "0") {
       data3 = [...data].sort((a, b) =>
         a.flight.price < b.flight.price ? -1 : 1
@@ -143,9 +141,8 @@ const Search = () => {
         a.flight.arrive < b.flight.arrive ? -1 : 1
       );
     }
-    console.log("data3", data3);
-    // Now you can use data3 here
-    setDisplayData(data3);
+
+    // setDisplayData(data3);
     setSort(items.find((item) => item.key === key).label);
   };
 
@@ -157,6 +154,20 @@ const Search = () => {
   const handleInputChangeTo = (event) => {
     setTo(event.target.value);
   };
+
+  useEffect(() => {
+    fetch("https://my.api.mockaroo.com/flight/info", {
+      headers: {
+        "X-API-Key": "96a25460",
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setDisplayData(data);
+        console.log("data", data);
+      })
+      .catch((error) => console.error("Error:", error));
+  }, []);
 
   return (
     <div className="search-container-section">
@@ -227,47 +238,53 @@ const Search = () => {
             <div className="main-ticket-info">
               <div className="sub-container">
                 <div className="main-box">
-                  <p>{item.flight.departureDate}</p>
+                  <p>{item.departure_time}</p>
                   <span> - </span>
-                  <p>{item.flight.arrive}</p>
+                  <p>{item.arrival_time}</p>
                 </div>
-                {/* <div className=""> */}
-                <p1>THY</p1>
+                <p1>{item.airline}</p1>
               </div>
               <div className="sub-container">
                 <div className="main-box">
-                  <p>{item.flight.duration} hours</p>
+                  <p>{item.duration} hours</p>
                 </div>
                 <div className="sub-box">
-                  <p1>{item.flight.fromCode}</p1>
+                  <p1>{item.departure_airport}</p1>
                   <span> - </span>
-                  <p1>{item.flight.toCode}</p1>
+                  <p1>{item.arrival_airport}</p1>
                 </div>
               </div>
 
               <div className="flight">
-                <p></p>
-                <p>{item.flight.fromCity}</p>
-              </div>
-              <div className="flight">
-                <p></p>
-                <p>{item.flight.toCity}</p>
+                <p>{item.departure_city}</p>
+                <span> - </span>
+                <p>{item.arrival_city}</p>
               </div>
               <div className="price-container">
-                <p>{item.flight.price}</p>
+                <p>{item.price} $</p>
               </div>
-              <DownOutlined
-                onClick={() => {
-                  setExtend(!extend);
-                  console.log("extend", extend);
-                }}
-              />
+              {!extend ? (
+                <DownOutlined
+                  onClick={() => {
+                    setExtend(!extend);
+                    console.log("extend", extend);
+                  }}
+                />
+              ) : (
+                <UpOutlined
+                  onClick={() => {
+                    setExtend(!extend);
+                    console.log("extend", extend);
+                  }}
+                />
+              )}
             </div>
             <div className={`extend-container ${extend && "open"}`}>
               <div className="extra-info">
-                <p>14 mart per</p>
-                <p1>Airbus A321</p1>
-                <p1>Economi</p1>
+                <p>Date: {item.departure_date}</p>
+                <p1>Flight Number: {item.flight_number}</p1>
+                <p1>Seat: {item.seat_number}</p1>
+                <p1>{item.ticket_type}</p1>
               </div>
             </div>
           </div>
@@ -284,34 +301,30 @@ const Search = () => {
               <div className="main-ticket-info">
                 <div className="sub-container">
                   <div className="main-box">
-                    <p>{item.flight.departureDate}</p>
+                    <p>{item.departure_time}</p>
                     <span> - </span>
-                    <p>{item.flight.arrive}</p>
+                    <p>{item.arrival_time}</p>
                   </div>
-                  {/* <div className=""> */}
-                  <p1>THY</p1>
+                  <p1>{item.airline}</p1>
                 </div>
                 <div className="sub-container">
                   <div className="main-box">
-                    <p>{item.flight.duration} hours</p>
+                    <p>{item.duration} hours</p>
                   </div>
                   <div className="sub-box">
-                    <p1>{item.flight.fromCode}</p1>
+                    <p1>{item.departure_airport}</p1>
                     <span> - </span>
-                    <p1>{item.flight.toCode}</p1>
+                    <p1>{item.arrival_airport}</p1>
                   </div>
                 </div>
 
                 <div className="flight">
-                  <p></p>
-                  <p>{item.flight.fromCity}</p>
-                </div>
-                <div className="flight">
-                  <p></p>
-                  <p>{item.flight.toCity}</p>
+                  <p>{item.departure_city}</p>
+                  <span> - </span>
+                  <p>{item.arrival_city}</p>
                 </div>
                 <div className="price-container">
-                  <p>{item.flight.price}</p>
+                  <p>{item.price} $</p>
                 </div>
                 {!extend ? (
                   <DownOutlined
@@ -329,15 +342,12 @@ const Search = () => {
                   />
                 )}
               </div>
-              <div
-                className={`extend-container ${
-                  extend && index === item.flight.id && "open"
-                }`}
-              >
+              <div className={`extend-container ${extend && "open"}`}>
                 <div className="extra-info">
-                  <p>14 mart per</p>
-                  <p1>Airbus A321</p1>
-                  <p1>Economi</p1>
+                  <p>Date: {item.departure_date}</p>
+                  <p1>Flight Number: {item.flight_number}</p1>
+                  <p1>Seat: {item.seat_number}</p1>
+                  <p1>{item.ticket_type}</p1>
                 </div>
               </div>
             </div>
