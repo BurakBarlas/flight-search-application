@@ -1,18 +1,11 @@
-import {
-  Button,
-  Checkbox,
-  DatePicker,
-  Dropdown,
-  Input,
-  Space,
-  message,
-} from "antd";
+import { Button, Checkbox, DatePicker, Dropdown, Input, Space } from "antd";
 import React, { useEffect, useState } from "react";
 import { DownOutlined, UpOutlined } from "@ant-design/icons";
 
 import "react-datepicker/dist/react-datepicker.css";
 import "./styles.scss";
 import Icon from "@ant-design/icons/lib/components/Icon";
+import { Hourglass } from "react-loader-spinner";
 
 const Search = () => {
   const [startDate, setStartDate] = useState(new Date());
@@ -23,6 +16,7 @@ const Search = () => {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [extend, setExtend] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   let data = [
     {
@@ -156,17 +150,36 @@ const Search = () => {
   };
 
   useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+
     fetch("https://my.api.mockaroo.com/flight/info", {
       headers: {
         "X-API-Key": "96a25460",
       },
     })
-      .then((response) => response.json())
-      .then((data) => {
-        setDisplayData(data);
-        console.log("data", data);
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
       })
-      .catch((error) => console.error("Error:", error));
+      .then((data) => {
+        if (isMounted) {
+          setDisplayData(data);
+          setIsLoading(false);
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
@@ -229,129 +242,145 @@ const Search = () => {
 
         <Button type="primary">Search</Button>
       </div>
-      <div className="results-container">
-        {(from
-          ? displayData?.filter((item) => item.flight.fromCity === from)
-          : displayData
-        ).map((item, index) => (
-          <div className="ticket-info">
-            <div className="main-ticket-info">
-              <div className="sub-container">
-                <div className="main-box">
-                  <p>{item.departure_time}</p>
-                  <span> - </span>
-                  <p>{item.arrival_time}</p>
-                </div>
-                <p1>{item.airline}</p1>
-              </div>
-              <div className="sub-container">
-                <div className="main-box">
-                  <p>{item.duration} hours</p>
-                </div>
-                <div className="sub-box">
-                  <p1>{item.departure_airport}</p1>
-                  <span> - </span>
-                  <p1>{item.arrival_airport}</p1>
-                </div>
-              </div>
+      {!isLoading ? (
+        <>
+          <div className="results-container">
+            {(from
+              ? displayData?.filter((item) => item.flight.fromCity === from)
+              : displayData
+            ).map((item, index) => (
+              <div className="ticket-info">
+                <div className="main-ticket-info">
+                  <div className="sub-container">
+                    <div className="main-box">
+                      <p>{item.departure_time}</p>
+                      <span> - </span>
+                      <p>{item.arrival_time}</p>
+                    </div>
+                    <p1>{item.airline}</p1>
+                  </div>
+                  <div className="sub-container">
+                    <div className="main-box">
+                      <p>{item.duration} hours</p>
+                    </div>
+                    <div className="sub-box">
+                      <p1>{item.departure_airport}</p1>
+                      <span> - </span>
+                      <p1>{item.arrival_airport}</p1>
+                    </div>
+                  </div>
 
-              <div className="flight">
-                <p>{item.departure_city}</p>
-                <span> - </span>
-                <p>{item.arrival_city}</p>
+                  <div className="flight">
+                    <p>{item.departure_city}</p>
+                    <span> - </span>
+                    <p>{item.arrival_city}</p>
+                  </div>
+                  <div className="price-container">
+                    <p>{item.price} $</p>
+                  </div>
+                  {!extend ? (
+                    <DownOutlined
+                      onClick={() => {
+                        setExtend(!extend);
+                        console.log("extend", extend);
+                      }}
+                    />
+                  ) : (
+                    <UpOutlined
+                      onClick={() => {
+                        setExtend(!extend);
+                        console.log("extend", extend);
+                      }}
+                    />
+                  )}
+                </div>
+                <div className={`extend-container ${extend && "open"}`}>
+                  <div className="extra-info">
+                    <p>Date: {item.departure_date}</p>
+                    <p1>Flight Number: {item.flight_number}</p1>
+                    <p1>Seat: {item.seat_number}</p1>
+                    <p1>{item.ticket_type}</p1>
+                  </div>
+                </div>
               </div>
-              <div className="price-container">
-                <p>{item.price} $</p>
-              </div>
-              {!extend ? (
-                <DownOutlined
-                  onClick={() => {
-                    setExtend(!extend);
-                    console.log("extend", extend);
-                  }}
-                />
-              ) : (
-                <UpOutlined
-                  onClick={() => {
-                    setExtend(!extend);
-                    console.log("extend", extend);
-                  }}
-                />
-              )}
-            </div>
-            <div className={`extend-container ${extend && "open"}`}>
-              <div className="extra-info">
-                <p>Date: {item.departure_date}</p>
-                <p1>Flight Number: {item.flight_number}</p1>
-                <p1>Seat: {item.seat_number}</p1>
-                <p1>{item.ticket_type}</p1>
-              </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
-      {!oneWay && (
-        <div className="results-container">
-          <p>INBOUND TRIP</p>
-          {(from
-            ? displayData?.filter((item) => item.flight.fromCity === from)
-            : displayData
-          ).map((item, index) => (
-            <div className="ticket-info">
-              <div className="main-ticket-info">
-                <div className="sub-container">
-                  <div className="main-box">
-                    <p>{item.departure_time}</p>
-                    <span> - </span>
-                    <p>{item.arrival_time}</p>
-                  </div>
-                  <p1>{item.airline}</p1>
-                </div>
-                <div className="sub-container">
-                  <div className="main-box">
-                    <p>{item.duration} hours</p>
-                  </div>
-                  <div className="sub-box">
-                    <p1>{item.departure_airport}</p1>
-                    <span> - </span>
-                    <p1>{item.arrival_airport}</p1>
-                  </div>
-                </div>
+          {!oneWay && (
+            <div className="results-container">
+              <p>INBOUND TRIP</p>
+              {(from
+                ? displayData?.filter((item) => item.flight.fromCity === from)
+                : displayData
+              ).map((item, index) => (
+                <div className="ticket-info">
+                  <div className="main-ticket-info">
+                    <div className="sub-container">
+                      <div className="main-box">
+                        <p>{item.departure_time}</p>
+                        <span> - </span>
+                        <p>{item.arrival_time}</p>
+                      </div>
+                      <p1>{item.airline}</p1>
+                    </div>
+                    <div className="sub-container">
+                      <div className="main-box">
+                        <p>{item.duration} hours</p>
+                      </div>
+                      <div className="sub-box">
+                        <p1>{item.departure_airport}</p1>
+                        <span> - </span>
+                        <p1>{item.arrival_airport}</p1>
+                      </div>
+                    </div>
 
-                <div className="flight">
-                  <p>{item.departure_city}</p>
-                  <span> - </span>
-                  <p>{item.arrival_city}</p>
+                    <div className="flight">
+                      <p>{item.departure_city}</p>
+                      <span> - </span>
+                      <p>{item.arrival_city}</p>
+                    </div>
+                    <div className="price-container">
+                      <p>{item.price} $</p>
+                    </div>
+                    {!extend ? (
+                      <DownOutlined
+                        onClick={() => {
+                          setExtend(!extend);
+                          console.log("extend", extend);
+                        }}
+                      />
+                    ) : (
+                      <UpOutlined
+                        onClick={() => {
+                          setExtend(!extend);
+                          console.log("extend", extend);
+                        }}
+                      />
+                    )}
+                  </div>
+                  <div className={`extend-container ${extend && "open"}`}>
+                    <div className="extra-info">
+                      <p>Date: {item.departure_date}</p>
+                      <p1>Flight Number: {item.flight_number}</p1>
+                      <p1>Seat: {item.seat_number}</p1>
+                      <p1>{item.ticket_type}</p1>
+                    </div>
+                  </div>
                 </div>
-                <div className="price-container">
-                  <p>{item.price} $</p>
-                </div>
-                {!extend ? (
-                  <DownOutlined
-                    onClick={() => {
-                      setExtend(!extend);
-                      console.log("extend", extend);
-                    }}
-                  />
-                ) : (
-                  <UpOutlined
-                    onClick={() => {
-                      setExtend(!extend);
-                      console.log("extend", extend);
-                    }}
-                  />
-                )}
-              </div>
-              <div className={`extend-container ${extend && "open"}`}>
-                <div className="extra-info">
-                  <p>Date: {item.departure_date}</p>
-                  <p1>Flight Number: {item.flight_number}</p1>
-                  <p1>Seat: {item.seat_number}</p1>
-                  <p1>{item.ticket_type}</p1>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
+          )}
+        </>
+      ) : (
+        <div className="loader">
+          <Hourglass
+            visible={true}
+            height="80"
+            width="80"
+            ariaLabel="hourglass-loading"
+            wrapperStyle={{}}
+            wrapperClass=""
+            colors={["#306cce", "#72a1ed"]}
+          />
         </div>
       )}
     </div>
