@@ -1,61 +1,56 @@
-import {
-  Button,
-  Checkbox,
-  DatePicker,
-  Dropdown,
-  Input,
-  Space,
-  Select,
-} from "antd";
+import { Button, Checkbox, DatePicker, Dropdown, Space, Select } from "antd";
 import React, { useEffect, useState } from "react";
-import { DownOutlined, UpOutlined } from "@ant-design/icons";
+import { DownOutlined } from "@ant-design/icons";
 
 import "react-datepicker/dist/react-datepicker.css";
 import "./styles.scss";
-import Icon from "@ant-design/icons/lib/components/Icon";
-import { Hourglass } from "react-loader-spinner";
+import { RotatingLines } from "react-loader-spinner";
 import { Airports, Flights } from "../Data/MockData";
-import Ticket from "./Ticket";
+import FlightData from "../Data/FlightData";
+import FlightTable from "./FlightTable";
 
 const Search = () => {
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
-  const [oneWay, setOneWay] = useState(false);
-  const [sort, setSort] = useState("Sort by");
-  const [displayData, setDisplayData] = useState([]);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [extend, setExtend] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+
+  const [oneWay, setOneWay] = useState(false);
+  const [sortBy, setSortBy] = useState("Sort by");
+  const [flightData, setFlightData] = useState([]);
+  const [returnFlightData, setReturnFlightData] = useState([]);
+
+  const [displayData, setDisplayData] = useState([]);
+
+  const [isLoading, setIsLoading] = useState(false);
   const [tableData, setTableData] = useState([Flights]);
 
   const sortingOptions = [
     {
-      label: "price lower",
-      key: "0",
+      label: "Price Lower",
+      key: "price",
     },
     {
-      label: "price higher",
-      key: "1",
+      label: "Flight Duration",
+      key: "duration",
     },
     {
-      label: "flight duration",
-      key: "2",
+      label: "Departure Time",
+      key: "departure_time",
     },
     {
-      label: "start date",
-      key: "3",
-    },
-    {
-      label: "arrive date",
-      key: "4",
+      label: "Arrival Time",
+      key: "arrival_time",
     },
   ];
 
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
+
+    // setDisplayData(FlightData.data);
+    // setFlightData(FlightData.data);
 
     fetch("https://my.api.mockaroo.com/flight/info", {
       headers: {
@@ -70,6 +65,7 @@ const Search = () => {
       })
       .then((data) => {
         if (isMounted) {
+          setFlightData(data);
           setDisplayData(data);
           setIsLoading(false);
         }
@@ -86,117 +82,172 @@ const Search = () => {
     };
   }, []);
 
+  const filterIncomingData = () => {
+    let filteredData = displayData.filter((flight) =>
+      flight.departure_airport.includes(from)
+    );
+    filteredData = filteredData.filter((flight) =>
+      flight.arrival_airport.includes(to)
+    );
+
+    if (startDate)
+      filteredData = filteredData.filter(
+        (flight) => flight.departure_date === startDate.format("DD/MM/YYYY")
+      );
+
+    let filteredReturnData = displayData.filter((flight) =>
+      flight.departure_airport.includes(to)
+    );
+    filteredReturnData = filteredReturnData.filter((flight) =>
+      flight.arrival_airport.includes(from)
+    );
+
+    if (endDate) {
+      filteredReturnData = filteredReturnData.filter(
+        (flight) => flight.departure_date === endDate.format("DD/MM/YYYY")
+      );
+    }
+
+    setFlightData(filteredData);
+    setReturnFlightData(filteredReturnData);
+  };
+
+  const sortFlightData = ({ key }) => {
+    setSortBy(sortingOptions.find((option) => option.key === key).label);
+    const filteredData = [
+      ...flightData.sort((a, b) => (a[key] > b[key] ? 1 : -1)),
+    ];
+    const filteredReturnData = [
+      ...returnFlightData.sort((a, b) => (a[key] > b[key] ? 1 : -1)),
+    ];
+
+    setFlightData(filteredData);
+    setReturnFlightData(filteredReturnData);
+  };
+
   return (
     <div className="search-container-section">
-      <div className="options">
-        <Checkbox
-          onChange={(e) => {
-            console.log(e.target.checked);
-            setOneWay(e.target.checked);
-            console.log("oneWay", oneWay);
-          }}
-        >
-          One way
-        </Checkbox>
-        <Dropdown
-          menu={{
-            sortingOptions,
-            // onClick,
-          }}
-          trigger={["click"]}
-        >
-          <a onClick={(e) => e.preventDefault()}>
-            <Space>
-              {sort}
-              <DownOutlined />
-            </Space>
-          </a>
-        </Dropdown>
-      </div>
-
-      <div className="search-tab-container">
-        <Select
-          showSearch
-          style={{ width: 200 }}
-          placeholder="Where From?"
-          optionFilterProp="children"
-          filterOption={(input, option) =>
-            (option?.label ?? "").toLowerCase().includes(input.toLowerCase()) ||
-            (option?.code ?? "").toLowerCase().includes(input.toLowerCase())
-          }
-          filterSort={(optionA, optionB) =>
-            (optionA?.label ?? "")
-              .toLowerCase()
-              .localeCompare((optionB?.label ?? "").toLowerCase())
-          }
-          options={Airports}
-          onSelect={(value) => {
-            setFrom(value);
-          }}
-        />
-        <Select
-          className="search-input"
-          showSearch
-          style={{ width: 200 }}
-          placeholder="Where To?"
-          optionFilterProp="children"
-          filterOption={(input, option) =>
-            (option?.label ?? "").toLowerCase().includes(input.toLowerCase()) ||
-            (option?.code ?? "").toLowerCase().includes(input.toLowerCase())
-          }
-          filterSort={(optionA, optionB) =>
-            (optionA?.label ?? "")
-              .toLowerCase()
-              .localeCompare((optionB?.label ?? "").toLowerCase())
-          }
-          options={Airports}
-          onSelect={(value) => {
-            setTo(value);
-          }}
-        />
-        <DatePicker
-          selected={startDate}
-          onChange={(e) => {
-            console.log(e);
-            setStartDate(e);
-            console.log("startDate", startDate);
-          }}
-          placeholder="Departure date"
-        />
-        <DatePicker
-          selected={endDate}
-          onChange={() => {
-            setEndDate();
-            console.log("endDate", endDate);
-          }}
-          placeholder="Return date"
-          disabled={oneWay}
-        />
-
-        <Button type="primary">Search</Button>
+      <div className="search-container-row">
+        <div className="search-tab-container">
+          <Select
+            showSearch
+            style={{ width: 200 }}
+            placeholder="Where From?"
+            optionFilterProp="children"
+            filterOption={(input, option) =>
+              (option?.label ?? "")
+                .toLowerCase()
+                .includes(input.toLowerCase()) ||
+              (option?.code ?? "").toLowerCase().includes(input.toLowerCase())
+            }
+            filterSort={(optionA, optionB) =>
+              (optionA?.label ?? "")
+                .toLowerCase()
+                .localeCompare((optionB?.label ?? "").toLowerCase())
+            }
+            options={Airports}
+            onSelect={(value) => {
+              setFrom(value);
+            }}
+          />
+          <Select
+            className="search-input"
+            showSearch
+            style={{ width: 200 }}
+            placeholder="Where To?"
+            optionFilterProp="children"
+            filterOption={(input, option) =>
+              (option?.label ?? "")
+                .toLowerCase()
+                .includes(input.toLowerCase()) ||
+              (option?.code ?? "").toLowerCase().includes(input.toLowerCase())
+            }
+            filterSort={(optionA, optionB) =>
+              (optionA?.label ?? "")
+                .toLowerCase()
+                .localeCompare((optionB?.label ?? "").toLowerCase())
+            }
+            options={Airports}
+            onSelect={(value) => {
+              setTo(value);
+            }}
+          />
+          <DatePicker
+            selected={startDate}
+            onChange={(e) => {
+              setStartDate(e);
+            }}
+            placeholder="Departure date"
+            format="DD/MM/YYYY"
+          />
+          <DatePicker
+            selected={endDate}
+            onChange={(e) => {
+              setEndDate(e);
+            }}
+            placeholder="Return date"
+            disabled={oneWay}
+            format="DD/MM/YYYY"
+          />
+          <Button
+            type="primary"
+            onClick={(e) => {
+              filterIncomingData();
+            }}
+          >
+            Search
+          </Button>
+        </div>
+        <div className="search-options">
+          <Checkbox
+            onChange={(e) => {
+              console.log(e.target.checked);
+              setOneWay(e.target.checked);
+              console.log("oneWay", oneWay);
+            }}
+          >
+            One way
+          </Checkbox>
+          <Dropdown
+            menu={{
+              items: sortingOptions,
+              onClick: sortFlightData,
+            }}
+            // trigger={["click"]}
+          >
+            <a onClick={(e) => e.preventDefault()}>
+              <Space>
+                {sortBy}
+                <DownOutlined />
+              </Space>
+            </a>
+          </Dropdown>
+        </div>
       </div>
       {!isLoading ? (
         <>
           <div className="results-container">
-            <Ticket data={displayData} from={from} />
+            <FlightTable data={flightData} from={from} />
           </div>
           {!oneWay && (
             <div className="results-container">
               <p>INBOUND TRIP</p>
-              <Ticket data={displayData} from={from} />
+              <FlightTable data={returnFlightData} from={from} />
             </div>
           )}
         </>
       ) : (
         <div className="loader">
-          <Hourglass
+          <RotatingLines
             visible={true}
-            height="80"
-            width="80"
+            strokeColor="#4fafff"
+            height="60"
+            width="60"
             ariaLabel="hourglass-loading"
             wrapperStyle={{}}
             wrapperClass=""
-            colors={["#306cce", "#72a1ed"]}
+            strokeWidth="5"
+            animationDuration="0.75"
           />
         </div>
       )}
