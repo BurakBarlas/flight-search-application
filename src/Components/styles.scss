@@ -109,9 +109,18 @@
           .extra-info {
             display: flex;
             flex-direction: row;
+            height: 100%;
             width: 100%;
             justify-content: space-around;
             align-items: center;
+          }
+        }
+        &.false {
+          .extra-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            height: 100%;
           }
         }
       }

@@ -54,7 +54,7 @@ const Search = () => {
 
     fetch("https://my.api.mockaroo.com/flight/info", {
       headers: {
-        "X-API-Key": "fb7f5ee0",
+        "X-API-Key": "ba11f760",
       },
     })
       .then((response) => {
