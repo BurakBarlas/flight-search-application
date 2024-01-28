@@ -1,14 +1,11 @@
 import React from "react";
 import FlightTableItem from "./FlightTableItem";
 
-const FlightTable = ({ data, from }) => {
-
+const FlightTable = ({ data }) => {
   return (
     <div>
       {data.length > 0 ? (
-        data.map((rowItem, index) => (
-          <FlightTableItem data={rowItem}/>
-        ))
+        data.map((rowItem, index) => <FlightTableItem data={rowItem} />)
       ) : (
         <p>No available flight</p>
       )}

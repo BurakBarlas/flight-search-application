@@ -114,6 +114,7 @@ const Search = () => {
 
   const sortFlightData = ({ key }) => {
     setSortBy(sortingOptions.find((option) => option.key === key).label);
+
     const filteredData = [
       ...flightData.sort((a, b) => (a[key] > b[key] ? 1 : -1)),
     ];
@@ -201,9 +202,7 @@ const Search = () => {
         <div className="search-options">
           <Checkbox
             onChange={(e) => {
-              console.log(e.target.checked);
               setOneWay(e.target.checked);
-              console.log("oneWay", oneWay);
             }}
           >
             One way
@@ -227,12 +226,12 @@ const Search = () => {
       {!isLoading ? (
         <>
           <div className="results-container">
-            <FlightTable data={flightData} from={from} />
+            <FlightTable data={flightData} />
           </div>
           {!oneWay && (
             <div className="results-container">
               <p>INBOUND TRIP</p>
-              <FlightTable data={returnFlightData} from={from} />
+              <FlightTable data={returnFlightData} />
             </div>
           )}
         </>
